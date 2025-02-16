@@ -1,0 +1,9 @@
+# Dependency directories
+node_modules/
+
+# Optional but recommended
+.env
+.DS_Store
+dist/
+coverage/
+*.log
