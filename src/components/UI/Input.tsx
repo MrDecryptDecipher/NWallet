@@ -10,7 +10,7 @@ interface InputProps {
   step?: string;
   readOnly?: boolean;
   className?: string;
-  onClick?: () => Promise<void> | void;  // Added onClick handler
+  onClick?: () => Promise<void> | void;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -23,7 +23,7 @@ const Input: React.FC<InputProps> = ({
   step,
   readOnly = false,
   className = '',
-  onClick  // Add onClick to destructured props
+  onClick
 }) => {
   return (
     <input
@@ -36,7 +36,7 @@ const Input: React.FC<InputProps> = ({
       step={step}
       readOnly={readOnly}
       className={`input-field ${className}`}
-      onClick={onClick}  // Add onClick handler to input element
+      onClick={onClick}
     />
   );
 };

@@ -15,7 +15,7 @@ import {
 interface TransactionModalProps {
   visible: boolean;
   setVisible: (visible: boolean) => void;
-  type: 'ETH' | 'SOL';  // Changed from 'chain' to 'type' for consistency
+  type: 'ETH' | 'SOL';
   parentalControlEnabled: boolean;
   ethPrice: number | null;
   solPrice: number | null;

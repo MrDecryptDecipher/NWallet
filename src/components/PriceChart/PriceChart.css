@@ -1,0 +1,100 @@
+.price-chart {
+  width: 100%;
+  background: #1e222d;
+  border-radius: 8px;
+  padding: 16px;
+  color: #fff;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.timeframe-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.timeframe-button {
+  background: #2a2e39;
+  border: 1px solid #363a45;
+  color: #b7bdc6;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.timeframe-button:hover {
+  background: #363a45;
+}
+
+.timeframe-button.active {
+  background: #2962ff;
+  border-color: #2962ff;
+  color: #fff;
+}
+
+.bid-ask-spread {
+  display: flex;
+  gap: 24px;
+  font-size: 14px;
+}
+
+.bid, .ask {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bid .label {
+  color: #b7bdc6;
+}
+
+.bid .price {
+  color: #26a69a;
+}
+
+.ask .label {
+  color: #b7bdc6;
+}
+
+.ask .price {
+  color: #ef5350;
+}
+
+.quantity {
+  color: #b7bdc6;
+  font-size: 12px;
+}
+
+.chart-container {
+  width: 100%;
+  height: 400px;
+  position: relative;
+}
+
+.error-message {
+  color: #ef5350;
+  padding: 16px;
+  text-align: center;
+  background: rgba(239, 83, 80, 0.1);
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #b7bdc6;
+  background: rgba(30, 34, 45, 0.9);
+  padding: 8px 16px;
+  border-radius: 4px;
+  z-index: 10;
+} 

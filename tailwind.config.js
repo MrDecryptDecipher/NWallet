@@ -7,8 +7,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#7f00ff', // Bright purple
-        secondary: '#e100ff', // Vibrant pink
+        primary: '#8E44AD',    // Purpureus (purple)
+        secondary: '#E74C3C',  // Carmine Pink
+        background: '#1A1B27', // Dark background
+        text: '#F5F5F7',       // Light text
         darkbg: '#1a1a1d', // Dark background
       },
       backgroundImage: {
@@ -16,5 +18,6 @@ module.exports = {
       },
     },
   },
+    darkMode: 'class',
   plugins: [],
 };

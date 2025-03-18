@@ -4,7 +4,7 @@ interface TextAreaProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   placeholder?: string;
-  className?: string; // Added className
+  className?: string;
 }
 
 const TextArea: React.FC<TextAreaProps> = ({

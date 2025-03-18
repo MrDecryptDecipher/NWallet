@@ -12,3 +12,18 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+// Ethereum provider type declarations for Nija Wallet
+interface Window {
+  ethereum?: {
+    isNijaWallet?: boolean;
+    name?: string;
+    isMetaMask?: boolean;
+    request?: (args: any) => Promise<any>;
+    on?: (event: string, callback: (...args: any[]) => void) => void;
+    removeListener?: (event: string, callback: (...args: any[]) => void) => void;
+    selectedAddress?: string;
+    chainId?: string;
+    [key: string]: any;
+  };
+}

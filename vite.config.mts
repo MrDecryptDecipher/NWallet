@@ -4,42 +4,76 @@ import { resolve } from 'path';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
 
-export default defineConfig({
+// Define the configuration
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     tsconfigPaths(),
+    NodeGlobalsPolyfillPlugin({
+      buffer: true,
+      process: true
+    })
   ],
+  base: '/',
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      buffer: 'buffer',
-    },
+      buffer: 'buffer/',
+      process: 'process/browser',
+      stream: 'stream-browserify',
+      zlib: 'browserify-zlib',
+      util: 'util/',
+      path: 'path-browserify'
+    }
   },
   define: {
-    'process.env': {},
+    'process.env': process.env,
     global: 'globalThis',
+    '__LIT_PROD__': mode === 'production',
+    'process.env.NODE_ENV': JSON.stringify(mode)
   },
   optimizeDeps: {
     esbuildOptions: {
       define: {
-        global: 'globalThis',
-      },
-      plugins: [
-        // @ts-ignore - Type mismatch workaround
-        NodeGlobalsPolyfillPlugin({
-          buffer: true,
-          process: true
-        }),
-      ],
+        global: 'globalThis'
+      }
     },
+    include: [
+      '@web3modal/wagmi',
+      '@web3modal/ethereum',
+      'wagmi',
+      'viem',
+      'buffer',
+      'process',
+      'util',
+      'stream-browserify'
+    ]
+  },
+  // Add TypeScript options to bypass checking
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
   },
   server: {
-    port: 5173,
-    open: true,
-    host: true
+    host: '0.0.0.0',
+    port: 5174,
+    strictPort: true,
+    hmr: {
+      clientPort: 5174
+    },
+    fs: {
+      strict: false
+    }
   },
   preview: {
-    port: 5173,
-    strictPort: true,
+    port: 5174,
+    strictPort: true
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true
+    }
   }
-});
+}));

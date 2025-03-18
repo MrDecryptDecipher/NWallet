@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface ParentalControlSettings {
   enabled: boolean;
@@ -19,20 +19,43 @@ interface ParentalContextType {
 
 const ParentalContext = createContext<ParentalContextType | undefined>(undefined);
 
+const defaultSettings: ParentalControlSettings = {
+  enabled: false,
+  dailyLimit: 0,
+  allowedAddresses: [],
+  allowedDApps: [],
+  timeRestrictions: {
+    start: '09:00',
+    end: '17:00',
+  },
+};
+
 export function ParentalProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<ParentalControlSettings>({
-    enabled: false,
-    dailyLimit: 0,
-    allowedAddresses: [],
-    allowedDApps: [],
-    timeRestrictions: {
-      start: '09:00',
-      end: '17:00',
-    },
-  });
+  const [settings, setSettings] = useState<ParentalControlSettings>(defaultSettings);
+
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem('nija_parental_settings');
+      if (savedSettings) {
+        setSettings(JSON.parse(savedSettings));
+      }
+    } catch (error) {
+      console.warn('Error loading parental settings:', error);
+    }
+  }, []);
 
   const updateSettings = (newSettings: Partial<ParentalControlSettings>) => {
-    setSettings((prev) => ({ ...prev, ...newSettings }));
+    setSettings(prevSettings => {
+      const updatedSettings = { ...prevSettings, ...newSettings };
+      // Save to localStorage
+      try {
+        localStorage.setItem('nija_parental_settings', JSON.stringify(updatedSettings));
+      } catch (error) {
+        console.warn('Error saving parental settings:', error);
+      }
+      return updatedSettings;
+    });
   };
 
   const checkTransaction = (amount: number, recipient: string): { allowed: boolean; reason?: string } => {

@@ -1,109 +1,108 @@
-// src/pages/Home.tsx
-import React, { useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useTheme } from '../contexts/ThemeContext';
 
-function Starfield() {
-  const starCount = 3000;
-  const positions = useMemo(() => {
-    const arr = new Float32Array(starCount * 3);
-    for (let i = 0; i < starCount; i++) {
-      arr[i * 3 + 0] = (Math.random() - 0.5) * 500;
-      arr[i * 3 + 1] = (Math.random() - 0.5) * 500;
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 500;
-    }
-    return arr;
-  }, [starCount]);
-
-  useFrame((state) => {
-    state.scene.rotation.y += 0.0005;
-    state.scene.rotation.x += 0.0002;
-  });
-
-  return (
-    <points>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={positions.length / 3}
-          array={positions}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <pointsMaterial size={2.5} color="#ffffff" opacity={0.9} transparent sizeAttenuation />
-    </points>
-  );
+interface Activity {
+  type: string;
+  transactionHash?: string;
+  timestamp?: number;
+  // Add other activity properties as needed
 }
 
-export default function Home() {
+interface HomeProps {
+  nftGenActivity?: Activity[];
+}
+
+const Home: React.FC<HomeProps> = ({ nftGenActivity = [] }) => {
+  const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
+  const [activities, setActivities] = useState<Activity[]>(nftGenActivity);
+
+  useEffect(() => {
+    const checkNFTGenActivity = () => {
+      const transactionHash = localStorage.getItem('nftgen_transactionHash');
+      if (transactionHash) {
+        setActivities(prev => {
+          if (!prev.some(activity => activity.transactionHash === transactionHash)) {
+            return [{
+              type: 'transaction',
+              transactionHash,
+              timestamp: Date.now()
+            }, ...prev];
+          }
+          return prev;
+        });
+      }
+    };
+
+    checkNFTGenActivity();
+    const intervalId = setInterval(checkNFTGenActivity, 5000);
+    return () => clearInterval(intervalId);
+  }, []);
+
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
-      <Canvas
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-        camera={{ position: [0, 0, 0], fov: 75 }}
-      >
-        <Starfield />
-      </Canvas>
-      
-      <div style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        textAlign: 'center',
-        width: '100%'
-      }}>
-        <h1 style={{
-          fontSize: '2.5rem',
-          fontWeight: 'bold',
-          color: 'white',
-          marginBottom: '2rem'
-        }}>
+    <div className={`w-full min-h-screen flex flex-col items-center justify-center p-4 ${
+      isDarkMode 
+        ? 'bg-gradient-to-br from-purple-900 via-slate-900 to-pink-900' 
+        : 'bg-gradient-to-br from-purple-200 via-slate-100 to-pink-200'
+    }`}>
+      <div className="max-w-xl w-full flex flex-col items-center justify-center text-center">
+        <h1 className={`text-4xl md:text-5xl font-bold mb-12 ${
+          isDarkMode ? 'text-white' : 'text-slate-800'
+        }`}>
           NIJA CUSTODIAN WALLET
         </h1>
-        
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-          <Link to="/register">
-            <button style={{
-              padding: '0.75rem 2rem',
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '9999px',
-              color: 'white',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}>
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center w-full mb-12">
+          <Link to="/register" className="w-full sm:w-auto">
+            <button className={`w-full sm:w-auto px-8 py-3 rounded-lg border transition ${
+              isDarkMode 
+                ? 'bg-purple-700/40 border-purple-500/40 text-white hover:bg-purple-700/60' 
+                : 'bg-purple-500/20 border-purple-500/30 text-purple-800 hover:bg-purple-500/30'
+            }`}>
               Register
             </button>
           </Link>
-          
-          <Link to="/login">
-            <button style={{
-              padding: '0.75rem 2rem',
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '9999px',
-              color: 'white',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}>
+
+          <Link to="/login" className="w-full sm:w-auto">
+            <button className={`w-full sm:w-auto px-8 py-3 rounded-lg border transition ${
+              isDarkMode 
+                ? 'bg-pink-700/40 border-pink-500/40 text-white hover:bg-pink-700/60' 
+                : 'bg-pink-500/20 border-pink-500/30 text-pink-800 hover:bg-pink-500/30'
+            }`}>
               Login
             </button>
           </Link>
         </div>
+
+        {activities.length > 0 && (
+          <div className={`mt-6 px-4 py-3 rounded-lg w-full ${
+            isDarkMode ? 'bg-slate-800/50 text-white' : 'bg-white/50 text-slate-800'
+          }`}>
+            <p className="font-medium">Recent NFTGen Activities:</p>
+            {activities.slice(0, 3).map((activity, index) => (
+              <div key={activity.transactionHash || index} className="font-mono text-sm break-all mt-2">
+                <p className="text-xs opacity-70">
+                  {activity.timestamp ? new Date(activity.timestamp).toLocaleString() : 'Recent'}
+                </p>
+                <p>Type: {activity.type}</p>
+                {activity.transactionHash && (
+                  <p>Hash: {activity.transactionHash}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div style={{
-        position: 'absolute',
-        bottom: '1rem',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        color: 'white'
-      }}>
+      <div className={`absolute bottom-4 ${
+        isDarkMode ? 'text-white/60' : 'text-slate-600'
+      }`}>
         Powered by Nija
       </div>
     </div>
   );
-}
+};
+
+export default Home;

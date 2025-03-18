@@ -1,0 +1,230 @@
+.crypto-charts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  margin: 20px 0;
+}
+
+.chart-section {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 15px;
+  height: 300px;
+}
+
+.chart-section h3 {
+  color: #fff;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.nija-wallet-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.wallet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.wallet-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.parental-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.network-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.network-card {
+  background: rgba(17, 24, 39, 0.7);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 24px;
+  backdrop-filter: blur(12px);
+}
+
+.network-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.network-header h2 {
+  font-size: 20px;
+  color: #fff;
+}
+
+.network-header select {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.network-info {
+  margin-bottom: 20px;
+}
+
+.balance-display {
+  margin: 15px 0;
+}
+
+.balance-amount {
+  font-size: 24px;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 5px;
+}
+
+.balance-usd {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.action-buttons button {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.price-chart {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  height: 250px;
+}
+
+.price-chart h3 {
+  color: #fff;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.address-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 15px;
+  margin: 20px 0;
+}
+
+.address-section h4 {
+  color: #fff;
+  font-size: 14px;
+  margin-bottom: 10px;
+  opacity: 0.8;
+}
+
+.address-display {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.address-text {
+  font-family: 'Roboto Mono', monospace;
+  color: #fff;
+  font-size: 14px;
+  word-break: break-all;
+  flex: 1;
+  opacity: 0.9;
+}
+
+.copy-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copy-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.testnet-section {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.error {
+  color: #d32f2f;
+  padding: 10px;
+  margin: 10px 0;
+  background: #ffebee;
+  border-radius: 4px;
+}
+
+/* Time interval buttons */
+.time-intervals {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 15px;
+}
+
+.time-intervals button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.time-intervals button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.time-intervals button.active {
+  background: #8b5cf6;
+}
+
+canvas {
+  width: 100% !important;
+  height: 220px !important;
+} 
