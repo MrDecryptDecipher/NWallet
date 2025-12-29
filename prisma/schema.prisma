@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  wallets       Wallet[]
+  auditLogs     AuditLog[]
+  settings      Settings?
+  
+  // Profile Fields
+  name          String?
+  phone         String?
+  isEmailVerified Boolean @default(false)
+  isPhoneVerified Boolean @default(false)
+  
+  // Recursive Parental Control
+  parentId      String?
+  parent        User?     @relation("ParentChild", fields: [parentId], references: [id])
+  children      User[]    @relation("ParentChild")
+  
+  // Token Creation History
+  createdTokens TokenLog[]
+}
+
+model Wallet {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Wallet Data
+  address         String   // The Computed Address (AA or EOA)
+  chainType       String   // "ETH" | "SOL"
+  encryptedData   String   // Encrypted Keypair/Seed
+  iv              String   // Initialization Vector for Decryption
+  
+  // Account Abstraction Specifics
+  isSmartAccount  Boolean  @default(false)
+  salt            String?  // For CREATE2
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  transactions    Transaction[]
+
+  @@unique([userId, chainType, address])
+}
+
+model Transaction {
+  id              String   @id @default(uuid())
+  walletId        String
+  wallet          Wallet   @relation(fields: [walletId], references: [id])
+  
+  hash            String?  // Blockchain Hash (nullable if failed)
+  recipient       String
+  amount          String
+  token           String   @default("NATIVE")
+  status          String   // "PENDING", "COMPLETED", "FAILED"
+  
+  timestamp       DateTime @default(now())
+}
+
+model Settings {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Parental / Security Controls
+  dailyLimit          Float    @default(0)
+  allowedAddresses    String   // JSON string of array
+  timeCheckEnabled    Boolean  @default(false)
+  timeStart           String   @default("09:00")
+  timeEnd             String   @default("17:00")
+  
+  // Privacy
+  zkModeEnabled       Boolean  @default(false)
+}
+
+model TokenLog {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  
+  chain           String   // ETH / SOL
+  name            String
+  symbol          String
+  supply          String
+  contractAddress String?
+  timestamp       DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  action    String
+  metadata  String   // JSON details
+  ipAddress String?
+  timestamp DateTime @default(now())
+}

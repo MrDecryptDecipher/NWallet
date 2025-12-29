@@ -1,133 +1,132 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Canvas } from '@react-three/fiber';
+﻿import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-import { ethers } from 'ethers';
+import { motion } from 'framer-motion';
+import { Mail, Lock, ArrowRight, Wallet, LogIn } from 'lucide-react';
+import { GlassCard } from '../components/ui/GlassCard';
+import { NeonInput } from '../components/ui/NeonInput';
+import { AnimatedButton } from '../components/ui/AnimatedButton';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { decryptData } from '../utils/crypto';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showSignature, setShowSignature] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleInitialSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const userData = JSON.parse(localStorage.getItem(email) || '{}');
-
-    if (userData && password === userData.password) {
-      setShowSignature(true);
-    } else {
-      toast.error('Invalid email or password');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      toast.error('Please enter email and password');
+      return;
     }
-  };
 
-  const handleSignatureVerification = async () => {
+    setIsLoading(true);
     try {
-      const userData = JSON.parse(localStorage.getItem(email) || '{}');
-      const { mnemonic } = userData;
+      const response = await fetch('http://localhost:3001/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (!mnemonic) {
-        toast.error('No mnemonic found for this account');
-        return;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed');
       }
 
-      const wallet = ethers.Wallet.fromPhrase(mnemonic);
-      const message = `Welcome to NIJA Wallet!\n\nThis signature is used to verify your ownership.\n\nTimestamp: ${Date.now()}`;
-      
-      try {
-        const signature = await wallet.signMessage(message);
-        const recoveredAddress = ethers.verifyMessage(message, signature);
-        
-        if (recoveredAddress === wallet.address) {
-          toast.success('Signature verified successfully!');
-          navigate('/nijawallet');
-        } else {
-          toast.error('Signature verification failed');
+      // Secure Login (In-Memory)
+      const { walletData, token, settings } = data;
+      let mnemonic = null;
+
+      if (walletData && walletData.encrypted) {
+        try {
+          // Decrypt Client-Side
+          console.log("Context: Decrypting wallet...", walletData);
+          mnemonic = await decryptData(
+            walletData.encrypted,
+            walletData.iv,
+            walletData.salt,
+            password // Encrypted with user password
+          );
+          console.log("Context: Wallet unlocked.");
+        } catch (e) {
+          console.error(e);
+          toast.error("Failed to decrypt wallet. Is your password correct?");
+          return; // Stop login if we can't unlock the wallet
         }
-      } catch (error) {
-        console.error('Signature error:', error);
-        toast.error('Failed to sign message');
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      toast.error('Failed to process login');
+
+      login(token, { email, settings, mnemonic });
+
+      toast.success('Wallet Unlocked & Ready!');
+      navigate('/dashboard');
+
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="w-screen h-screen overflow-hidden relative dark:bg-background">
-      <Canvas
-        className="absolute inset-0"
-        camera={{ position: [0, 0, 0], fov: 75 }}
-      >
-        <> </>
-      </Canvas>
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 relative overflow-hidden p-6">
+      {/* Background Ambience */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-600/20 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px]" />
+      </div>
 
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 dark:from-purple-300 dark:to-pink-300">
-              Access Wallet
-            </h1>
+      <GlassCard className="w-full max-w-lg p-8 z-10" hoverEffect={false}>
+        <div className="text-center mb-8">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-500 to-indigo-600 mb-4 shadow-lg shadow-purple-500/30"
+          >
+            <LogIn className="w-8 h-8 text-white" />
+          </motion.div>
+          <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+            Welcome Back
+          </h2>
+          <p className="text-gray-400 mt-2">
+            Access your secure wallet interface.
+          </p>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          <NeonInput
+            label="Email Address"
+            placeholder="cosmos@nwallet.com"
+            icon={<Mail className="w-5 h-5" />}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <NeonInput
+            label="Password"
+            type="password"
+            placeholder=""
+            icon={<Lock className="w-5 h-5" />}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
+          <div className="pt-2">
+            <AnimatedButton onClick={handleLogin} isLoading={isLoading}>
+              Sign In <ArrowRight className="w-5 h-5" />
+            </AnimatedButton>
           </div>
 
-          {!showSignature ? (
-            <form onSubmit={handleInitialSubmit} className="space-y-6 bg-slate-800/20 backdrop-blur-lg rounded-xl p-8 border border-white/10 dark:bg-gray-800/50 dark:border-gray-700/50">
-              <div className="space-y-4">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email"
-                  required
-                  className="w-full px-4 py-3 rounded-lg bg-slate-700/20 border border-white/10 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition dark:bg-gray-700/50 dark:border-gray-700/50 dark:placeholder-gray-500 dark:focus:ring-purple-400"
-                />
-                
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
-                  required
-                  className="w-full px-4 py-3 rounded-lg bg-slate-700/20 border border-white/10 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition dark:bg-gray-700/50 dark:border-gray-700/50 dark:placeholder-gray-500 dark:focus:ring-purple-400"
-                />
-
-                <button
-                  type="submit"
-                  className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium transition dark:from-purple-400 dark:to-pink-400"
-                >
-                  Continue
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="space-y-6 bg-slate-800/20 backdrop-blur-lg rounded-xl p-8 border border-white/10 dark:bg-gray-800/50 dark:border-gray-700/50">
-              <div className="space-y-4">
-                <div className="text-center">
-                  <h2 className="text-xl text-purple-300 font-medium mb-2 dark:text-purple-200">Verify Wallet Ownership</h2>
-                  <p className="text-white/70 text-sm mb-4 dark:text-gray-300">
-                    Please sign the message to verify your wallet ownership
-                  </p>
-                </div>
-
-                <div className="p-4 bg-slate-700/30 rounded-lg border border-white/10 dark:bg-gray-700/50 dark:border-gray-700/50">
-                  <p className="text-white text-sm text-center dark:text-gray-300">
-                    You are signing in to NIJA Wallet. This signature will verify your ownership of the wallet.
-                  </p>
-                </div>
-
-                <button
-                  onClick={handleSignatureVerification}
-                  className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium transition dark:from-purple-400 dark:to-pink-400"
-                >
-                  Sign & Login
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+          <div className="text-center text-sm text-gray-400 mt-4">
+            Don't have an account? <Link to="/register" className="text-cyan-400 hover:text-cyan-300">Create one</Link>
+          </div>
+        </motion.div>
+      </GlassCard>
     </div>
   );
 };

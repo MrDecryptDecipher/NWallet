@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
+import { isAddress, parseEther } from 'ethers';
+import { PublicKey } from '@solana/web3.js';
 
 interface TransactionModalProps {
   visible: boolean;
@@ -28,9 +30,29 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!recipient || !amount) {
       toast.error('Please fill in all fields');
+      return;
+    }
+
+    // STRICT VALIDATION (Deep Audit Fix)
+    try {
+      if (parseFloat(amount) <= 0) throw new Error("Amount must be positive");
+
+      if (type === "ETH") {
+        if (!isAddress(recipient)) throw new Error("Invalid Ethereum Address");
+        parseEther(amount); // Validate amount format
+      } else {
+        // Validate Solana Address
+        try {
+          new PublicKey(recipient);
+        } catch {
+          throw new Error("Invalid Solana Address");
+        }
+      }
+    } catch (err: any) {
+      toast.error(err.message);
       return;
     }
 

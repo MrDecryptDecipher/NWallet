@@ -1,23 +1,70 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
-    './index.html',
-    './src/**/*.{js,ts,jsx,tsx}',
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
       colors: {
-        primary: '#8E44AD',    // Purpureus (purple)
-        secondary: '#E74C3C',  // Carmine Pink
-        background: '#1A1B27', // Dark background
-        text: '#F5F5F7',       // Light text
-        darkbg: '#1a1a1d', // Dark background
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        primary: {
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
+        },
+        secondary: {
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
+        },
+        glass: {
+          100: "rgba(255, 255, 255, 0.1)",
+          200: "rgba(255, 255, 255, 0.2)",
+          300: "rgba(255, 255, 255, 0.3)",
+          border: "rgba(255, 255, 255, 0.2)",
+        }
       },
-      backgroundImage: {
-        'gradient-cosmic': 'radial-gradient(circle at top, rgba(225,0,255,0.3), rgba(127,0,255,0.8))',
+      backdropBlur: {
+        xs: '2px',
       },
+      animation: {
+        'gradient-x': 'gradient-x 15s ease infinite',
+        'gradient-y': 'gradient-y 15s ease infinite',
+        'gradient-xy': 'gradient-xy 15s ease infinite',
+      },
+      keyframes: {
+        'gradient-y': {
+          '0%, 100%': {
+            'background-size': '400% 400%',
+            'background-position': 'center top'
+          },
+          '50%': {
+            'background-size': '200% 200%',
+            'background-position': 'center center'
+          }
+        },
+        'gradient-x': {
+          '0%, 100%': {
+            'background-size': '200% 200%',
+            'background-position': 'left center'
+          },
+          '50%': {
+            'background-size': '200% 200%',
+            'background-position': 'right center'
+          }
+        },
+        'gradient-xy': {
+          '0%, 100%': {
+            'background-size': '400% 400%',
+            'background-position': 'left center'
+          },
+          '50%': {
+            'background-size': '200% 200%',
+            'background-position': 'right center'
+          }
+        }
+      }
     },
   },
-    darkMode: 'class',
   plugins: [],
-};
+}

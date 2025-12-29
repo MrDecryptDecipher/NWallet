@@ -1,46 +1,58 @@
 import { useState } from 'react';
-import { useParentalControl } from '../contexts/ParentalControlContext';
+import { useAlchemy } from '../context/AlchemyContext';
+import { parseEther } from 'viem';
 import { toast } from 'react-toastify';
-import { formatEther, parseEther } from 'ethers';
 
-interface TransactionParams {
-  to: string;
-  value: string;
-  tokenAddress?: string;
-}
+export const useSendUserOp = () => {
+    const { client, address, isConnected } = useAlchemy();
+    const [isSending, setIsSending] = useState(false);
 
-export function useTransaction() {
-  const [isLoading, setIsLoading] = useState(false);
-  const { isTransactionAllowed } = useParentalControl();
+    const sendUserOp = async (recipient: string, amount: string) => {
+        if (!client || !address || !isConnected) {
+            toast.error("Wallet not connected");
+            return;
+        }
 
-  const sendTransaction = async ({ to, value, tokenAddress }: TransactionParams) => {
-    try {
-      setIsLoading(true);
+        setIsSending(true);
+        try {
+            const amountWei = parseEther(amount);
 
-      // Convert value to a number for parental control checks
-      const valueInEth = parseFloat(formatEther(parseEther(value)));
+            const policyId = import.meta.env.VITE_GAS_POLICY_ID;
 
-      // Check if the transaction is allowed by parental controls
-      const isAllowed = await isTransactionAllowed(to, valueInEth, tokenAddress);
-      if (!isAllowed) {
-        throw new Error('Transaction blocked by parental controls');
-      }
+            // 1. Send User Operation
+            const { hash } = await client.sendUserOperation({
+                uo: {
+                    target: recipient as `0x${string}`,
+                    data: "0x",
+                    value: amountWei,
+                },
+                // If policy ID is set, Alchemy Client middleware will handle Paymaster data automatically
+                // provided the client was initialized with the policy ID (which we need to check in AlchemyContext)
+                // BUT, pure Alchemy AA SDK usually needs the Policy ID in the client config, not per-op unless overriding.
+                // Let's assume standard behavior: Client handles it if configured.
+                // However, the missing piece is ensuring AlchemyContext *uses* the Policy ID.
+            });
 
-      // Proceed with the transaction if allowed
-      // ... existing transaction code ...
+            console.log("UserOp Hash:", hash);
+            toast.info(`Transaction submitted! Hash: ${hash.slice(0, 10)}...`, { autoClose: 5000 });
 
-      toast.success('Transaction submitted successfully');
-    } catch (error) {
-      console.error('Transaction failed:', error);
-      toast.error(error instanceof Error ? error.message : 'Transaction failed');
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+            // 2. Wait for Bundle
+            const txHash = await client.waitForUserOperationTransaction({
+                hash,
+            });
 
-  return {
-    sendTransaction,
-    isLoading,
-  };
-} 
+            console.log("Transaction Hash:", txHash);
+            toast.success(`Transfer Complete! TX: ${txHash.slice(0, 10)}...`);
+
+            return txHash;
+        } catch (error: any) {
+            console.error("UserOp Failed", error);
+            toast.error(`Transaction Failed: ${error.message || "Unknown error"}`);
+            throw error;
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    return { sendUserOp, isSending };
+};

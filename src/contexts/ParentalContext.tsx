@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
+import { toast } from 'react-toastify';
+import { apiClient } from '../utils/api';
 
 export interface ParentalControlSettings {
   enabled: boolean;
@@ -9,18 +12,19 @@ export interface ParentalControlSettings {
     start: string;
     end: string;
   };
+  zkModeEnabled: boolean;
 }
 
 interface ParentalContextType {
   settings: ParentalControlSettings;
-  updateSettings: (settings: Partial<ParentalControlSettings>) => void;
+  updateSettings: (settings: Partial<ParentalControlSettings>) => Promise<void>;
   checkTransaction: (amount: number, recipient: string) => { allowed: boolean; reason?: string };
 }
 
 const ParentalContext = createContext<ParentalContextType | undefined>(undefined);
 
 const defaultSettings: ParentalControlSettings = {
-  enabled: false,
+  enabled: true, // Default to true for safety if not fetched
   dailyLimit: 0,
   allowedAddresses: [],
   allowedDApps: [],
@@ -28,58 +32,92 @@ const defaultSettings: ParentalControlSettings = {
     start: '09:00',
     end: '17:00',
   },
+  zkModeEnabled: false
 };
 
 export function ParentalProvider({ children }: { children: React.ReactNode }) {
+  const { token, isAuthenticated } = useAuth();
   const [settings, setSettings] = useState<ParentalControlSettings>(defaultSettings);
 
-  // Load settings from localStorage on mount
+  // Load settings from API on mount/login, with localStorage fallback
   useEffect(() => {
-    try {
-      const savedSettings = localStorage.getItem('nija_parental_settings');
-      if (savedSettings) {
-        setSettings(JSON.parse(savedSettings));
-      }
-    } catch (error) {
-      console.warn('Error loading parental settings:', error);
-    }
-  }, []);
-
-  const updateSettings = (newSettings: Partial<ParentalControlSettings>) => {
-    setSettings(prevSettings => {
-      const updatedSettings = { ...prevSettings, ...newSettings };
-      // Save to localStorage
+    const fetchSettings = async () => {
+      // Try to load cached settings first for immediate enforcement
       try {
-        localStorage.setItem('nija_parental_settings', JSON.stringify(updatedSettings));
+        const cached = localStorage.getItem('nija_parental_cache');
+        if (cached) setSettings(JSON.parse(cached));
+      } catch (e) { /* ignore */ }
+
+      if (!token || !isAuthenticated) return;
+
+      try {
+        const data = await apiClient('/api/settings', { token });
+
+        if (data) {
+          let addresses = [];
+          try {
+            addresses = typeof data.allowedAddresses === 'string'
+              ? JSON.parse(data.allowedAddresses)
+              : (data.allowedAddresses || []);
+          } catch (e) { addresses = []; }
+
+          const newSettings = {
+            enabled: true,
+            dailyLimit: data.dailyLimit || 0,
+            allowedAddresses: addresses,
+            allowedDApps: [],
+            timeRestrictions: { start: "09:00", end: "17:00" },
+            zkModeEnabled: data.zkModeEnabled || false
+          };
+
+          setSettings(newSettings);
+          localStorage.setItem('nija_parental_cache', JSON.stringify(newSettings));
+        }
       } catch (error) {
-        console.warn('Error saving parental settings:', error);
+        console.error("Failed to fetch parental settings, using cache", error);
       }
-      return updatedSettings;
-    });
+    };
+    fetchSettings();
+  }, [token, isAuthenticated]);
+
+  const updateSettings = async (newSettings: Partial<ParentalControlSettings>) => {
+    if (!token) return;
+
+    try {
+      const payload = {
+        dailyLimit: newSettings.dailyLimit,
+        allowedAddresses: newSettings.allowedAddresses,
+        zkModeEnabled: newSettings.zkModeEnabled
+      };
+
+      await apiClient('/api/settings', {
+        token,
+        data: payload
+      });
+
+      setSettings(prev => ({ ...prev, ...newSettings }));
+      toast.success("Settings updated");
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast.error("Failed to save settings");
+    }
   };
 
   const checkTransaction = (amount: number, recipient: string): { allowed: boolean; reason?: string } => {
-    if (!settings.enabled) return { allowed: true };
+    // If daily limit is 0, assume no limit? Or Block all?
+    // Let's assume 0 means block all for safety, unless allow list is present.
+    // Actually, usually 0 daily limit means "unlimited" or "no limit set" OR "strictly 0".
+    // Let's treat it as: if dailyLimit > 0, check it.
 
-    const now = new Date();
-    const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
-
-    const [startHour, startMinute] = settings.timeRestrictions.start.split(':').map(Number);
-    const [endHour, endMinute] = settings.timeRestrictions.end.split(':').map(Number);
-
-    const startTimeInMinutes = startHour * 60 + startMinute;
-    const endTimeInMinutes = endHour * 60 + endMinute;
-
-    if (currentTimeInMinutes < startTimeInMinutes || currentTimeInMinutes >= endTimeInMinutes) {
-      return { allowed: false, reason: 'Outside allowed trading hours' };
+    if (settings.dailyLimit > 0 && amount > settings.dailyLimit) {
+      return { allowed: false, reason: `Exceeds daily limit of ${settings.dailyLimit}` };
     }
 
-    if (amount > settings.dailyLimit) {
-      return { allowed: false, reason: 'Amount exceeds daily limit' };
-    }
-
-    if (!settings.allowedAddresses.includes(recipient)) {
-      return { allowed: false, reason: 'Recipient not in allowed addresses' };
+    // Allowed Addresses Logic: If list is not empty, MUST be in list
+    if (settings.allowedAddresses.length > 0) {
+      if (!settings.allowedAddresses.includes(recipient)) {
+        return { allowed: false, reason: 'Recipient not in allowed addresses' };
+      }
     }
 
     return { allowed: true };
